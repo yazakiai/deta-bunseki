@@ -128,6 +128,10 @@ svg.graph{width:100%;height:auto;display:block;user-select:none;-webkit-user-sel
 .tbl .x{border:0;background:none;color:#b0b6bd;font-size:15px;padding:0 4px}
 .listwrap{max-height:38vh;overflow:auto}
 .headbtns{display:flex;gap:8px;flex-wrap:wrap}
+#sampleBtn.on{background:#fff4ec;border-color:#f5c9a8;color:#c2410c}
+.sample-banner{background:#fff4ec;color:#c2410c;font-weight:700;font-size:14px;border-radius:12px;padding:8px 14px;margin:-6px 0 12px}
+svg .pop{animation:pop .45s cubic-bezier(.2,.9,.3,1.4);transform-box:fill-box;transform-origin:center}
+@keyframes pop{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
 </style>
 </head>
 <body>
@@ -218,10 +222,12 @@ svg.graph{width:100%;height:auto;display:block;user-select:none;-webkit-user-sel
   <div class="topbar thead">
     <div><h2 id="tTitle"></h2><p class="hint" id="tHint"></p></div>
     <div class="headbtns">
+      <button class="btn" id="sampleBtn">サンプルデータを表示</button>
       <button class="btn" id="showQrBtn">QRを大きく表示</button>
       <button class="btn" id="editBtn">グラフの設定</button>
     </div>
   </div>
+  <div class="sample-banner hidden" id="sampleBanner">サンプルデータを表示中です（生徒の画面には出ていません）</div>
   <div class="tgrid">
     <div class="graphbox"><svg class="graph" id="tGraph" viewBox="0 0 600 560"></svg></div>
     <div class="side">
@@ -1563,6 +1569,51 @@ const PRESETS = [
   { name: '身長と足のサイズ', hint: '自分の身長と足のサイズを答えよう', xLabel: '身長（cm）', yLabel: '足のサイズ（cm）', xMin: 140, xMax: 190, yMin: 20, yMax: 30, xStep: 1, yStep: 0.5, tag: 'パッと答える' },
   { name: '数学と英語の点数', hint: '前回のテストの数学と英語の点数を入れよう', xLabel: '数学（点）', yLabel: '英語（点）', xMin: 0, xMax: 100, yMin: 0, yMax: 100, xStep: 1, yStep: 1, tag: 'パッと答える' },
 ];
+/* ---------- サンプルデータ（各テーマ20件・実際の値に近いおおよその数値） ---------- */
+const SAMPLES = {
+  '動物の体重と寿命': [
+    ['ハムスター',0.1,2.5],['ウサギ',2,9],['ネコ',4,15],['コアラ',10,13],['イヌ（中型）',15,13],['チンパンジー',50,45],
+    ['カンガルー',60,15],['ヒツジ',70,12],['ジャイアントパンダ',100,25],['ゴリラ',160,40],['ライオン',190,15],['トラ',200,18],
+    ['ブタ',200,15],['ヒグマ',300,30],['シマウマ',350,25],['ウマ',500,28],['ラクダ',500,40],['キリン',1000,25],
+    ['カバ',1500,45],['アフリカゾウ',5000,65]],
+  'コンビニ商品の価格とカロリー': [
+    ['おにぎり（鮭）',160,180],['おにぎり（ツナマヨ）',150,230],['たまごサンド',300,330],['ミックスサンド',350,380],
+    ['からあげ弁当',550,850],['幕の内弁当',600,700],['のり弁当',450,750],['ミートソースパスタ',500,650],
+    ['冷やし中華',550,520],['野菜サラダ',330,120],['サラダチキン',250,110],['メロンパン',150,400],['あんぱん',140,300],
+    ['からあげ（5個）',250,280],['フランクフルト',160,260],['肉まん',160,250],['カップ麺',230,350],['プリン',200,250],
+    ['シュークリーム',150,230],['ヨーグルト',150,90]],
+  'アイスの価格とカロリー': [
+    ['ソーダ味の棒アイス',70,70],['大容量バニラカップ',150,370],['高級バニラカップ',350,240],['チョコモナカ',180,290],
+    ['コーンアイス',180,260],['もちアイス（2個）',150,160],['練乳かき氷カップ',160,180],['チョココーティングバー',130,180],
+    ['ソフトクリーム風カップ',250,250],['シャーベットカップ',120,100],['チューブアイス（2本）',150,180],['もなかアイス',150,220],
+    ['一口チョコアイス（6粒）',150,190],['果汁バー',100,90],['チョコバー',160,230],['ミルクバー',100,120],
+    ['抹茶カップ',300,230],['かき氷バー',140,140],['プレミアムバー',300,280],['クッキーサンド',160,210]],
+  'アイスの価格と内容量': [
+    ['大容量バニラカップ',150,200],['高級ミニカップ',350,110],['ソーダ味の棒アイス',70,85],['もちアイス（2個）',150,94],
+    ['チョコモナカ',180,150],['コーンアイス',180,140],['チューブアイス（2本）',150,160],['一口チョコアイス（6粒）',150,60],
+    ['果汁バー',100,80],['プレミアムバー',300,85],['抹茶カップ',300,120],['かき氷カップ',160,180],['ミルクバー',100,90],
+    ['シャーベットカップ',120,120],['ソフトクリーム風カップ',250,180],['チョコバー',160,90],['もなかアイス',150,140],
+    ['小さめカップ',100,120],['プレミアムカップ',280,130],['大きめカップ',200,200]],
+  '車の車両重量と燃費': [
+    ['軽ハイトワゴン',850,24.0],['軽スーパーハイトワゴン',950,21.0],['軽SUV',900,22.0],['軽バン',950,17.5],
+    ['コンパクトカー（ガソリン）',1000,20.5],['コンパクトHV（小）',1050,35.4],['コンパクトHV',1100,33.6],['コンパクトSUV（HV）',1200,28.0],
+    ['スポーツカー',1300,12.0],['小型ミニバン（HV）',1350,28.0],['HVセダン（小）',1400,28.6],['中型SUV（ガソリン）',1600,15.2],
+    ['輸入セダン',1600,14.0],['HVセダン（中）',1600,24.5],['中型ミニバン（ガソリン）',1600,15.0],['中型ミニバン（HV）',1650,23.0],
+    ['中型SUV（HV）',1700,20.6],['大型ミニバン（ガソリン）',2200,10.6],['大型ミニバン（HV）',2250,17.5],['大型SUV',2500,7.9]],
+  'スマホの使用時間と睡眠時間': [
+    [1,7.5],[1.5,7],[2,7.5],[2,6.5],[2.5,7],[3,7],[3,6],[3,8],[3.5,6.5],[4,6.5],
+    [4,7],[4.5,6],[5,6.5],[5,5.5],[5.5,6],[6,6.5],[6,5],[6.5,5.5],[7,5],[8,5.5]],
+  '身長と足のサイズ': [
+    [150,22.5],[153,23],[155,23],[156,23.5],[157,24.5],[158,23.5],[160,23.5],[161,23],[162,24],[164,23.5],
+    [165,24.5],[166,25],[168,25.5],[169,25],[171,26],[173,25.5],[174,26],[175,27],[177,27],[181,28]],
+  '数学と英語の点数': [
+    [35,48],[42,55],[45,65],[48,40],[50,62],[55,58],[58,45],[60,70],[62,55],[65,68],
+    [66,52],[70,75],[72,60],[74,82],[78,66],[80,72],[82,58],[85,80],[88,74],[92,85]],
+};
+function samplePoints(key) {
+  const list = SAMPLES[key]; if (!list) return null;
+  return list.map((a, i) => a.length === 3 ? { id: 'smp' + i, name: a[0], x: a[1], y: a[2] } : { id: 'smp' + i, name: 'サンプル' + (i + 1), x: a[0], y: a[1] });
+}
 const BASE_FLAGS = { showAll: true, showNames: false, showMean: false, showR: false, locked: false };
 
 /* ---------- 共通 ---------- */
@@ -1665,14 +1716,15 @@ function drawGraph(svg, R, pts, o = {}) {
     s += `<text x="${ML + PW - 6}" y="${Y - 7}" font-size="13" fill="#1f7a6d" font-weight="700" text-anchor="end" ${F}>ȳ = ${r2(my)}</text>`;
     const q = [0, 0, 0, 0, 0];
     pts.forEach(p => { if (p.x > mx && p.y > my) q[1]++; else if (p.x < mx && p.y > my) q[2]++; else if (p.x < mx && p.y < my) q[3]++; else if (p.x > mx && p.y < my) q[4]++; });
-    const box = (x, y, a, n) => `<text x="${x}" y="${y}" font-size="22" font-weight="800" fill="rgba(31,122,109,.55)" text-anchor="${a}" ${F}>${n}人</text>`;
+    const box = (x, y, a, n) => `<text x="${x}" y="${y}" font-size="22" font-weight="800" fill="rgba(31,122,109,.55)" text-anchor="${a}" ${F}>${n}${o.unit || '人'}</text>`;
     s += box(ML + PW - 10, MT + 46, 'end', q[1]) + box(ML + 10, MT + 46, 'start', q[2]) + box(ML + 10, MT + PH - 12, 'start', q[3]) + box(ML + PW - 10, MT + PH - 12, 'end', q[4]);
   }
   const r = o.big ? 9 : 8;
   const list = pts.slice().sort((a, b) => (a.id === o.myId) - (b.id === o.myId));
   for (const p of list) {
     const X = sx(R, Math.min(R.xMax, Math.max(R.xMin, p.x))), Y = sy(R, Math.min(R.yMax, Math.max(R.yMin, p.y))), me = p.id === o.myId;
-    s += `<circle cx="${X}" cy="${Y}" r="${me ? r + 3 : r}" fill="${me ? '#e8590c' : 'rgba(47,111,220,.75)'}" stroke="#fff" stroke-width="2"/>`;
+    const color = me ? '#e8590c' : o.sample ? 'rgba(232,89,12,.72)' : 'rgba(47,111,220,.75)';
+    s += `<circle ${p.id === o.popId ? 'class="pop"' : ''} cx="${X}" cy="${Y}" r="${me ? r + 3 : r}" fill="${color}" stroke="#fff" stroke-width="2"/>`;
     if (o.showNames && p.name) s += `<text x="${X + r + 4}" y="${Y - r}" font-size="13" fill="#333" ${F}>${esc(p.name)}</text>`;
   }
   svg.innerHTML = s;
@@ -1686,11 +1738,12 @@ function makeQR(el, text, size) {
 
 /* ---------- 先生：設定 ---------- */
 let T = { code: null, room: null, pts: [], unsub: [] };
-let draft = null, setupMode = 'new';   // 'new' | 'edit'
+let setupMode = 'new', selTheme = 0;   // 'new' | 'edit'
 function readForm() {
   return { title: $('#cfTitle').value.trim() || '散布図', hint: $('#cfHint').value.trim(), xLabel: $('#cfXL').value.trim() || 'x', yLabel: $('#cfYL').value.trim() || 'y',
     xMin: +$('#cfXmin').value, xMax: +$('#cfXmax').value, yMin: +$('#cfYmin').value, yMax: +$('#cfYmax').value,
-    xStep: +$('#cfXstep').value || 1, yStep: +$('#cfYstep').value || 1 };
+    xStep: +$('#cfXstep').value || 1, yStep: +$('#cfYstep').value || 1,
+    sampleKey: selTheme >= 0 ? PRESETS[selTheme].name : null };
 }
 function fillForm(d) {
   $('#cfTitle').value = d.title ?? d.name ?? ''; $('#cfHint').value = d.hint || '';
@@ -1704,6 +1757,7 @@ function updatePreview() {
   if (d.xMax > d.xMin && d.yMax > d.yMin) drawGraph($('#pvGraph'), d, []);
 }
 function renderThemes(selected) {
+  selTheme = selected;
   $('#themeList').innerHTML = PRESETS.map((p, i) => `<button class="theme ${selected === i ? 'on' : ''}" data-theme="${i}">
     <div class="t">${esc(p.name)}</div><div class="a">${esc(p.xLabel)} × ${esc(p.yLabel)}</div><span class="tag">${esc(p.tag)}</span></button>`).join('')
     + `<button class="theme custom ${selected === -1 ? 'on' : ''}" data-theme="-1">＋ 自分で作る</button>`;
@@ -1713,7 +1767,7 @@ function openSetup(mode) {
   $('#cfGo').textContent = mode === 'new' ? 'QRコードを表示する →' : '保存してグラフに戻る';
   $('#cfMsg').textContent = '';
   if (mode === 'new') { renderThemes(0); fillForm(PRESETS[0]); }
-  else { const i = PRESETS.findIndex(p => p.name === T.room.title); renderThemes(i); fillForm(T.room); }
+  else { const i = PRESETS.findIndex(p => p.name === (T.room.sampleKey || T.room.title)); renderThemes(i); fillForm(T.room); }
   show('setup');
 }
 async function setupGo() {
@@ -1726,6 +1780,7 @@ async function setupGo() {
     attachTeacher(code);
     openQR();
   } else {
+    stopSample();
     await api.setRoom(T.code, d);
     show('teacher');
   }
@@ -1734,6 +1789,7 @@ async function setupGo() {
 /* ---------- 先生：QR / グラフ ---------- */
 const studentUrl = () => location.origin + location.pathname + '?room=' + T.code;
 function attachTeacher(code) {
+  stopSample();
   T.unsub.forEach(f => f && f()); T.code = code; ls.set('tapScatter_lastRoom', code);
   T.unsub = [api.watchRoom(code, r => { T.room = r; teacherRender(); }), api.watchPoints(code, p => { T.pts = p; teacherRender(); })];
   $('#tCodeLabel').textContent = code;
@@ -1756,21 +1812,45 @@ function teacherRender() {
   $('#qrCount').textContent = T.pts.length;
   $('#qrTitle').textContent = R.title; $('#qrHint').textContent = R.hint || '';
   $('#tTitle').textContent = R.title; $('#tHint').textContent = R.hint || '';
-  drawGraph($('#tGraph'), R, T.pts, { showNames: R.showNames, showMean: R.showMean, big: true });
+  const hasSample = !!SAMPLES[R.sampleKey];
+  if (!hasSample && SM.on) stopSample();
+  $('#sampleBtn').classList.toggle('hidden', !hasSample);
+  $('#sampleBtn').classList.toggle('on', SM.on);
+  $('#sampleBtn').textContent = SM.on ? 'サンプルを消す' : 'サンプルデータを表示';
+  $('#sampleBanner').classList.toggle('hidden', !SM.on);
+  const pts = SM.on ? SM.list.slice(0, SM.shown) : T.pts;
+  drawGraph($('#tGraph'), R, pts, { showNames: R.showNames, showMean: R.showMean, big: true, sample: SM.on, popId: SM.on ? SM.popId : null, unit: SM.on ? '個' : '人' });
+  $('#stN').previousElementSibling.textContent = SM.on ? '個数' : '人数';
   document.querySelectorAll('.tg').forEach(b => b.classList.toggle('on', !!R[b.dataset.t]));
-  const n = T.pts.length;
+  const n = pts.length;
   $('#stN').textContent = n;
-  $('#stX').textContent = n ? r2(mean(T.pts.map(p => p.x))) : '–';
-  $('#stY').textContent = n ? r2(mean(T.pts.map(p => p.y))) : '–';
+  $('#stX').textContent = n ? r2(mean(pts.map(p => p.x))) : '–';
+  $('#stY').textContent = n ? r2(mean(pts.map(p => p.y))) : '–';
   $('#thX').textContent = R.xLabel; $('#thY').textContent = R.yLabel;
   $('#rBox').classList.toggle('hidden', !R.showR);
-  const r = corr(T.pts);
+  const r = corr(pts);
   $('#rVal').textContent = r === null ? '–' : r.toFixed(2);
   $('#rDesc').textContent = r === null ? '点が2つ以上必要です' : rDesc(r) + '（目安）';
-  $('#tList').innerHTML = T.pts.slice().sort((a, b) => String(a.name).localeCompare(String(b.name), 'ja', { numeric: true }))
-    .map(p => `<tr><td>${esc(p.name) || '（名前なし）'}</td><td class="n">${p.x}</td><td class="n">${p.y}</td><td><button class="x" data-del="${esc(p.id)}" title="この点を消す">✕</button></td></tr>`).join('')
+  const rows = SM.on ? pts.slice().reverse() : pts.slice().sort((a, b) => String(a.name).localeCompare(String(b.name), 'ja', { numeric: true }));
+  $('#tList').innerHTML = rows.map(p => `<tr><td>${esc(p.name) || '（名前なし）'}</td><td class="n">${p.x}</td><td class="n">${p.y}</td><td>${SM.on ? '' : `<button class="x" data-del="${esc(p.id)}" title="この点を消す">✕</button>`}</td></tr>`).join('')
     || `<tr><td colspan="4" class="muted" style="text-align:center;padding:18px">まだ点がありません</td></tr>`;
 }
+
+/* ---------- サンプルの表示（1つずつアニメーション） ---------- */
+const SM = { on: false, list: [], shown: 0, popId: null, timer: null };
+function startSample() {
+  const list = samplePoints(T.room && T.room.sampleKey); if (!list) return;
+  clearInterval(SM.timer);
+  Object.assign(SM, { on: true, list: shuffleArr(list), shown: 0, popId: null });
+  teacherRender();
+  SM.timer = setInterval(() => {
+    if (SM.shown >= SM.list.length) { clearInterval(SM.timer); SM.popId = null; return; }
+    SM.popId = SM.list[SM.shown].id; SM.shown++;
+    teacherRender();
+  }, 280);
+}
+function stopSample() { clearInterval(SM.timer); Object.assign(SM, { on: false, list: [], shown: 0, popId: null }); }
+function shuffleArr(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
 /* ---------- 生徒 ---------- */
 let S = { code: null, id: null, name: '', room: null, pts: [], typing: false };
@@ -1844,6 +1924,7 @@ $('#cfGo').addEventListener('click', setupGo);
 $('#cfBack').addEventListener('click', () => show(setupMode === 'new' ? 'start' : 'teacher'));
 $('#toGraph').addEventListener('click', () => show('teacher'));
 $('#showQrBtn').addEventListener('click', openQR);
+$('#sampleBtn').addEventListener('click', () => { SM.on ? stopSample() : startSample(); teacherRender(); });
 $('#editBtn').addEventListener('click', () => openSetup('edit'));
 let clearArmed = 0;
 $('#clearBtn').addEventListener('click', async () => {
